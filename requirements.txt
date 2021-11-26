@@ -1,0 +1,12 @@
+certifi==2020.6.20
+cffi==1.15.0
+charset-normalizer==2.0.8
+cryptography==36.0.0
+idna==3.3
+msal==1.16.0
+Office365-REST-Python-Client==2.3.9
+pycparser==2.21
+PyJWT==2.3.0
+requests==2.26.0
+urllib3==1.26.7
+wincertstore==0.2
