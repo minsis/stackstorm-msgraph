@@ -1,0 +1,55 @@
+---
+name: "search_mail_items.yaml"
+description: "Search outlook mail items"
+entry_point: "search_mail_items.py"
+pack: "msgraph"
+runner_type: "python-script"
+enabled: true
+
+parameters:
+  account:
+    type: "string"
+    description: "The account name as defined in the pack's config"
+    default: "default"
+    required: false
+    position: 0
+
+  folder_path:
+    type: "string"
+    description: "The folder path of the mailbox. e.g 'Inbox/MyCoolFolder/ReallyAwesomeEmails'"
+    default: "Inbox"
+    required: false
+    position: 1
+
+  subject:
+    type: "string"
+    description: "The subject of the email(s) you're looking for. If not specified then all emails are returned"
+    default: "Inbox"
+    required: false
+    position: 2
+
+  is_read:
+    type: "boolean"
+    description: "The subject of the email(s) you're looking for. If not specified then all emails are returned"
+    default: "Inbox"
+    required: false
+    position: 3
+
+  select_query:
+    type: "string"
+    description: "The OData select parameter: https://docs.microsoft.com/en-us/graph/query-parameters#select-parameter"
+    required: false
+    position: 4
+
+  filter_query:
+    type: "string"
+    description: "The OData filter parameter: https://docs.microsoft.com/en-us/graph/query-parameters#filter-parameter"
+    required: false
+    position: 5
+
+  top:
+    type: "integer"
+    description: "The OData top parameter: https://docs.microsoft.com/en-us/graph/query-parameters#top-parameter"
+    default: 10
+    required: false
+    position: 6
