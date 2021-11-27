@@ -1,10 +1,15 @@
-import msal
-
+from msal import ConfidentialClientApplication
 from office365.graph_client import GraphClient
 from st2common.runners.base_action import Action
 
+from .decorators import requires_account
+
 
 class BaseGraphAction(Action):
+    def __init__(self, config):
+        super().__init__(config)
+
+        self.account = None
 
     def get_account(self, account="default"):
         """
@@ -15,51 +20,44 @@ class BaseGraphAction(Action):
 
         :param account: The account name as defined in the pack config under 'accounts'
         :type account: string, defaults to "default"
-        :return: The Graph user account
-        :rtype: :class:`office365`
+        :return: The Graph user account object
+        :rtype: :class:`office365.runtime.client_path.ClientPath`
         """
         try:
             account = self.config.get("accounts")[account]
         except KeyError:
-            raise ValueError("The account '{}' is not defined in the config")
+            raise ValueError("The account '{}' is not defined in the config".format(account))
 
-        self.client = GraphClient(self._acquire_token)
-
-        self.tenant_id_or_name = account["tenant_id_or_name"]
-        self.client_id = account["client_id"]
-        self.client_secret = account["client_secret"]
-        self.user_principal_name = account.get("user_principal_name")
-        self.authority_url = account.get(
+        client_id = account["client_id"]
+        client_secret = account["client_secret"]
+        user_principal_name = account.get("user_principal_name")
+        authority_url = account.get(
             "authority_url",
             "https://login.microsoftonline.com/{}".format(account["tenant_id_or_name"]),
         )
-        self.scopes = account.get("scopes") or ["https://graph.microsoft.com/.default"]
+        scopes = account.get("scopes", ["https://graph.microsoft.com/.default"])
 
-        if self.user_principal_name:
-            return self.client.users[self.user_principal_name].get().execute_query()
+        def _acquire_token():
+            app = ConfidentialClientApplication(
+                authority=authority_url,
+                client_id=client_id,
+                client_credential=client_secret
+            )
+            token = app.acquire_token_for_client(scopes=scopes)
+            return token
+
+        client = GraphClient(_acquire_token)
+
+        if user_principal_name:
+            return client.users[user_principal_name].get().execute_query()
         else:
             return self.client.me.get().execute_query()
-
-    def _acquire_token(self):
-        """
-        Acquire token via MSAL
-        """
-
-        app = msal.ConfidentialClientApplication(
-            authority=self.authority_url,
-            client_id=self.client_id,
-            client_credential=self.client_secret
-        )
-        token = app.acquire_token_for_client(scopes=self.scopes)
-        return token
 
 
 class BaseOutlookAction(BaseGraphAction):
 
-    def __init__(self):
-        super(BaseOutlookAction, self).__init__()
-
-    def _get_outlook_folder(self, folder_path:str):
+    @requires_account
+    def get_outlook_folder(self, folder_path: str):
         """
         Search for a folder within outlook
 
@@ -89,6 +87,6 @@ class BaseOutlookAction(BaseGraphAction):
                         "displayName eq {}".format(folder)
                     ).get().execute_query()[0]
             except IndexError:
-                raise ValueError("Mailbox folder path {} does not seem to exist".format(folder_path))
+                raise ValueError("Mailbox folder path '{}' does not seem to exist".format(folder_path))
 
         return parent
